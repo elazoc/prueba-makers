@@ -23,8 +23,8 @@ import reactor.core.publisher.Flux;
 
 /**
  * Live loan events over SSE, served by Spring MVC as a {@link Flux} (design section 11). An admin sees every loan
- * event; a user sees only the decisions on their own loans. The request is an async one that ends at
- * {@code spring.mvc.async.request-timeout}; the front then reconnects with its current token.
+ * event; a user sees only the decisions on their own loans. Every stream ends after {@code app.sse.max-duration};
+ * the front then reconnects with its current token.
  */
 @RestController
 @RequestMapping("/api/v1/loans")
@@ -40,10 +40,12 @@ class LoanEventsController {
 
     private final LoanEventBus bus;
     private final Duration heartbeat;
+    private final Duration maxDuration;
 
     LoanEventsController(LoanEventBus bus, SseProperties properties) {
         this.bus = bus;
         this.heartbeat = properties.heartbeat();
+        this.maxDuration = properties.maxDuration();
     }
 
     @GetMapping(path = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -54,7 +56,10 @@ class LoanEventsController {
         Flux<ServerSentEvent<LoanEventPayload>> heartbeats = Flux.interval(heartbeat)
                 .map(tick -> ServerSentEvent.<LoanEventPayload>builder().comment(HEARTBEAT).build());
         Flux<ServerSentEvent<LoanEventPayload>> stream = Flux.merge(loanEvents, heartbeats)
-                // Cancelling (client gone, timeout) unsubscribes from the bus and stops the heartbeat.
+                // Completes cleanly so the token behind this stream is checked again on reconnect; the async
+                // request timeout cannot do it because the heartbeat keeps the request active.
+                .take(maxDuration)
+                // Completing or cancelling (client gone) unsubscribes from the bus and stops the heartbeat.
                 .doFinally(signal -> log.debug("Live events stream of user {} ended ({})", me.id().value(), signal));
         return ResponseEntity.ok().header(NO_PROXY_BUFFERING, "no").body(stream);
     }

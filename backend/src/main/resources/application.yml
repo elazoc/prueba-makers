@@ -20,8 +20,8 @@ spring:
       enabled: true
   mvc:
     async:
-      # The live events stream is an async request: it closes after this and the front reconnects with its
-      # current token. Keep it below the proxy's SSE timeout (35 min in nginx).
+      # Backstop for async requests. The live events stream ends on its own at app.sse.max-duration: its
+      # heartbeat keeps the request active, so this timeout does not close it.
       request-timeout: 30m
 
 security:
@@ -45,6 +45,8 @@ app:
   sse:
     # SSE comment that keeps an idle live events stream open through proxies.
     heartbeat: 15s
+    # Every live events stream closes after this; the front reconnects with a fresh token.
+    max-duration: 30m
 
 loans:
   policy:
