@@ -1,6 +1,9 @@
 spring:
   application:
     name: prestemos
+  web:
+    locale: es
+    locale-resolver: fixed
   threads:
     virtual:
       enabled: true
