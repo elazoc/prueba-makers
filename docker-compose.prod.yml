@@ -1,0 +1,83 @@
+# Producción: https://prestamos.nebulasoftware.app (ver docs/DESPLIEGUE.md).
+#
+# Es independiente del docker-compose.yml de desarrollo. El .env del servidor (fuera de git) trae:
+#   COMPOSE_PROJECT_NAME=prueba-makers
+#   COMPOSE_FILE=docker-compose.prod.yml
+#   DB_PASSWORD=<aleatoria>
+# y la carpeta secrets/ (fuera de git) el par RS256 de los JWT.
+#
+# El VPS es compartido: cada servicio lleva tope de memoria y solo se publica un puerto, en
+# 127.0.0.1, hacia el nginx del servidor. Se despliega con scripts/deploy.sh.
+
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: prestemos
+      POSTGRES_USER: prestemos
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD en el .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prestemos -d prestemos"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+    logging: *logs
+
+  backend:
+    image: prestemos/backend:latest
+    # scripts/deploy.sh compila el jar en un contenedor desechable (con 1 núcleo) y esta imagen
+    # solo lo empaqueta. Cuando exista backend/Dockerfile se evaluará pasar a esa imagen.
+    build:
+      context: ./backend/target
+      dockerfile_inline: |
+        FROM eclipse-temurin:21-jre-alpine
+        RUN addgroup -S -g 10001 prestemos && adduser -S -D -u 10001 -G prestemos prestemos
+        WORKDIR /app
+        COPY prestemos-*.jar app.jar
+        USER prestemos
+        EXPOSE 8080
+        ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/prestemos
+      SPRING_DATASOURCE_USERNAME: prestemos
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD en el .env}
+      # Nunca en un servidor público.
+      SPRING_H2_CONSOLE_ENABLED: "false"
+      # Claves fijas: los tokens sobreviven a los reinicios.
+      SECURITY_JWT_PUBLICKEY: file:/run/secrets/jwt-public.pem
+      SECURITY_JWT_PRIVATEKEY: file:/run/secrets/jwt-private.pem
+      # Detrás de nginx con HTTPS: respeta X-Forwarded-Proto (URLs de Swagger, cookies).
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
+      TZ: America/Bogota
+    volumes:
+      - ./secrets:/run/secrets:ro
+    # Mientras no esté el front, la API atiende directo al nginx del servidor.
+    # Cuando llegue el servicio frontend, este puerto pasa a él y el backend queda sin puertos.
+    ports:
+      - "127.0.0.1:8050:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    mem_limit: 512m
+    logging: *logs
+
+volumes:
+  postgres-data:
