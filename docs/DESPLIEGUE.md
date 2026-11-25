@@ -60,5 +60,21 @@ usuario sin privilegios.
 | Dominio, HTTPS y nginx del servidor | Listo (2026-11-25) |
 | Repositorio en GitHub | Listo |
 | Carpeta, `.env` y claves en el servidor | Listo |
-| Backend (API + Swagger) con PostgreSQL | Desplegado; mientras no esté el front atiende directo en `127.0.0.1:8050` |
-| Front | Pendiente: cuando su Dockerfile esté en `main`, el puerto 8050 pasa al servicio `frontend` y el backend queda sin puertos |
+| Backend (API + Swagger) con PostgreSQL | Desplegado, sin puertos publicados |
+| Front (Angular) | Desplegado en versión provisional: algunas pantallas aún están en construcción |
+
+### Front provisional
+
+Mientras el front no tenga su propio `frontend/Dockerfile`, `scripts/deploy.sh` lo compila con
+Node 24 en un contenedor desechable (`ng build`, configuración de producción, sin simulador) y lo
+sirve un nginx sin root con `deploy/frontend.nginx.conf`. Ese nginx atiende el puerto publicado y
+reparte:
+
+| Ruta | Va a |
+|---|---|
+| `/` y rutas del Angular | `index.html` del Angular (sin caché, con CSP) |
+| `/api/…` | backend (`/api/v1/loans/events` sin buffer, hasta 35 min) |
+| `/swagger-ui.html`, `/v3/api-docs`, `/actuator/health` | backend, sin la CSP del front |
+
+Cuando exista el Dockerfile del front, el servicio `frontend` pasa a usarlo y
+`deploy/frontend.nginx.conf` se retira.

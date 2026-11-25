@@ -66,10 +66,7 @@ services:
       TZ: America/Bogota
     volumes:
       - ./secrets:/run/secrets:ro
-    # Mientras no esté el front, la API atiende directo al nginx del servidor.
-    # Cuando llegue el servicio frontend, este puerto pasa a él y el backend queda sin puertos.
-    ports:
-      - "127.0.0.1:8050:8080"
+    # Sin puertos: solo lo alcanza el servicio frontend por la red interna.
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
       interval: 10s
@@ -77,6 +74,32 @@ services:
       retries: 6
       start_period: 90s
     mem_limit: 512m
+    logging: *logs
+
+  frontend:
+    image: prestemos/frontend:latest
+    # scripts/deploy.sh compila el Angular en un contenedor desechable (con 1 núcleo) en
+    # frontend-dist/ y esta imagen solo lo sirve con nginx sin root. Provisional hasta que exista
+    # frontend/Dockerfile.
+    build:
+      context: ./frontend-dist
+      dockerfile_inline: |
+        FROM nginxinc/nginx-unprivileged:alpine
+        COPY default.conf /etc/nginx/conf.d/default.conf
+        COPY browser/ /usr/share/nginx/html/
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    # El único puerto publicado: el nginx del servidor (HTTPS) llega aquí.
+    ports:
+      - "127.0.0.1:8050:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ | grep -q '<app-root'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    mem_limit: 64m
     logging: *logs
 
 volumes:
