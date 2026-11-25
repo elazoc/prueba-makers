@@ -36,4 +36,14 @@ class PageModelTest {
         assertThat(mapped.page()).isEqualTo(1);
         assertThat(mapped.totalElements()).isEqualTo(5);
     }
+
+    @Test
+    void pageResultRejectsInvalidPagingAndDoesNotOverflow() {
+        assertThatThrownBy(() -> new PageResult<>(List.of(), -1, 10, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PageResult<>(List.of(), 0, 0, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PageResult<>(List.of(), 0, 10, -1)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(new PageResult<>(List.of(), 0, 1, Long.MAX_VALUE).totalPages()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(new PageResult<>(List.of(), 0, Integer.MAX_VALUE, Integer.MAX_VALUE + 1L).totalPages())
+                .isEqualTo(2);
+    }
 }

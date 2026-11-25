@@ -198,6 +198,18 @@ class LoanCommandServiceTest {
     }
 
     @Test
+    void updateOrCancelOfNonPendingLoanSavesAndPublishesNothing() {
+        Loan loan = inStatus(LoanStatus.APPROVED);
+        when(repo.findByIdForUpdate(loan.id())).thenReturn(Optional.of(loan));
+
+        assertThatThrownBy(() -> service().update(new UpdateLoanCommand(loan.id(), applicant, new BigDecimal("500"), 6)))
+                .isInstanceOf(LoanNotPendingException.class);
+        assertThatThrownBy(() -> service().cancel(loan.id(), applicant)).isInstanceOf(LoanNotPendingException.class);
+        verify(repo, never()).save(any());
+        verifyNoInteractions(publisher);
+    }
+
+    @Test
     void commandMethodsAreTransactional() {
         Method[] methods = LoanCommandService.class.getDeclaredMethods();
         int checked = 0;

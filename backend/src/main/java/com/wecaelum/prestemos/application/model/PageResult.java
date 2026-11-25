@@ -7,11 +7,20 @@ import java.util.function.Function;
 public record PageResult<T>(List<T> items, int page, int size, long totalElements) implements Serializable {
 
     public PageResult {
+        if (page < 0) {
+            throw new IllegalArgumentException("La página no puede ser negativa.");
+        }
+        if (size < 1) {
+            throw new IllegalArgumentException("El tamaño de página debe ser al menos 1.");
+        }
+        if (totalElements < 0) {
+            throw new IllegalArgumentException("El total de elementos no puede ser negativo.");
+        }
         items = List.copyOf(items);
     }
 
     public int totalPages() {
-        return totalElements == 0 ? 0 : (int) ((totalElements + size - 1) / size);
+        return (int) Math.min(Integer.MAX_VALUE, Math.ceilDiv(totalElements, (long) size));
     }
 
     public <R> PageResult<R> map(Function<T, R> mapper) {
