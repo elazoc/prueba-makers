@@ -1524,3 +1524,46 @@ pr-filter-tabs {
 .pr-shell__main {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Filtros dobles en la barra */
+.pr-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Casilla con etiqueta y ayuda */
+.pr-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.pr-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--action);
+}
+.pr-check > span {
+  display: grid;
+}
+.pr-check__label {
+  font-weight: 500;
+}
+.pr-check__hint {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+.pr-check--disabled {
+  cursor: not-allowed;
+  background: var(--surface-sunken);
+}
+select.pr-input {
+  appearance: auto;
+}

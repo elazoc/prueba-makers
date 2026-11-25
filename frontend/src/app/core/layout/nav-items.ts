@@ -9,5 +9,8 @@ export interface NavItem {
 
 export const NAV_ITEMS: Record<Role, NavItem[]> = {
   USER: [{ label: 'Mis préstamos', icon: 'wallet', link: '/prestamos' }],
-  ADMIN: [{ label: 'Solicitudes', icon: 'inbox', link: '/admin/solicitudes' }],
+  ADMIN: [
+    { label: 'Solicitudes', icon: 'inbox', link: '/admin/solicitudes' },
+    { label: 'Usuarios', icon: 'users', link: '/admin/usuarios' },
+  ],
 };
