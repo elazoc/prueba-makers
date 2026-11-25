@@ -19,6 +19,12 @@ import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -53,10 +59,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         DisabledAccountException.class
     })
     ResponseEntity<ProblemDetail> handleBusiness(RuntimeException ex) {
+        HttpStatus status = statusOf(ex);
+        if (status == null) {
+            return handleUnexpected(ex);
+        }
         String code = ex instanceof DomainException domain
                 ? domain.code()
                 : ex instanceof InvalidCredentialsException invalid ? invalid.code() : ((DisabledAccountException) ex).code();
-        return respond(problems.create(statusOf(ex), code, ex.getMessage()));
+        return respond(problems.create(status, code, ex.getMessage()));
     }
 
     private static HttpStatus statusOf(RuntimeException ex) {
@@ -70,14 +80,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case LoanPolicyViolationException e -> HttpStatus.UNPROCESSABLE_CONTENT;
             case InvalidCredentialsException e -> HttpStatus.UNAUTHORIZED;
             case DisabledAccountException e -> HttpStatus.UNAUTHORIZED;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+            default -> null;
         };
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     ResponseEntity<ProblemDetail> handleConcurrentModification() {
         return respond(problems.create(HttpStatus.CONFLICT, "CONCURRENT_MODIFICATION",
-                "Otra persona cambió este préstamo. Recarga e inténtalo de nuevo."));
+                "Otra persona cambió este registro. Recarga e inténtalo de nuevo."));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -134,10 +144,38 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleNoResourceFoundException(
-            NoResourceFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        ProblemDetail problem = problems.create(HttpStatus.NOT_FOUND, "NOT_FOUND", "Esa ruta no existe.");
-        return handleExceptionInternal(ex, problem, headers, status, request);
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        Object resolved = body;
+        if (resolved == null && ex instanceof ErrorResponse errorResponse) {
+            resolved = errorResponse.getBody();
+        }
+        if (resolved instanceof ProblemDetail problem
+                && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
+            HttpStatus status = HttpStatus.valueOf(statusCode.value());
+            String detail = frameworkDetail(ex, problem.getDetail());
+            resolved = problems.create(status, frameworkCode(ex, status), detail);
+        }
+        return super.handleExceptionInternal(ex, resolved, headers, statusCode, request);
+    }
+
+    private static String frameworkCode(Exception ex, HttpStatus status) {
+        if (ex instanceof MissingServletRequestParameterException || ex instanceof MissingPathVariableException) {
+            return VALIDATION_ERROR;
+        }
+        return status.name();
+    }
+
+    private static String frameworkDetail(Exception ex, String fallback) {
+        return switch (ex) {
+            case NoResourceFoundException e -> "Esa ruta no existe.";
+            case HttpRequestMethodNotSupportedException e -> "Este método no está permitido en esta ruta.";
+            case HttpMediaTypeNotSupportedException e -> "El tipo de contenido no es compatible. Envía JSON.";
+            case HttpMediaTypeNotAcceptableException e -> "No podemos responder en el formato pedido.";
+            case MissingServletRequestParameterException e -> "Falta el parámetro '" + e.getParameterName() + "'.";
+            case MissingPathVariableException e -> "Falta el parámetro '" + e.getVariableName() + "'.";
+            default -> fallback;
+        };
     }
 
     private static ResponseEntity<ProblemDetail> respond(ProblemDetail problem) {

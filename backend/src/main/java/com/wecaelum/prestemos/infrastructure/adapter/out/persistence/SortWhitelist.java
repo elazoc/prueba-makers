@@ -39,7 +39,7 @@ final class SortWhitelist {
             direction = Sort.Direction.DESC;
         } else {
             if (!allowed.contains(field)) {
-                throw new IllegalArgumentException("Sort field not allowed: " + field);
+                throw new IllegalArgumentException("No se puede ordenar por '" + field + "'.");
             }
             direction = query.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
         }

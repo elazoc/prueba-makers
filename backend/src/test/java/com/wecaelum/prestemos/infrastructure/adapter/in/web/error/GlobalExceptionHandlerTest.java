@@ -13,6 +13,7 @@ import com.wecaelum.prestemos.application.exception.DisabledAccountException;
 import com.wecaelum.prestemos.application.exception.InvalidCredentialsException;
 import com.wecaelum.prestemos.domain.exception.CannotDeactivateSelfException;
 import com.wecaelum.prestemos.domain.exception.CannotDemoteSelfException;
+import com.wecaelum.prestemos.domain.exception.DomainException;
 import com.wecaelum.prestemos.domain.exception.EmailAlreadyRegisteredException;
 import com.wecaelum.prestemos.domain.exception.LoanNotFoundException;
 import com.wecaelum.prestemos.domain.exception.LoanNotPendingException;
@@ -48,6 +49,17 @@ import org.springframework.web.bind.annotation.RestController;
 @Import({GlobalExceptionHandlerTest.ThrowingController.class, ProblemDetailFactory.class, ClockConfig.class})
 class GlobalExceptionHandlerTest {
 
+    static class UnmappedDomainException extends DomainException {
+        UnmappedDomainException() {
+            super("mensaje de negocio sin mapear");
+        }
+
+        @Override
+        public String code() {
+            return "UNMAPPED";
+        }
+    }
+
     record Body(@NotNull Integer amount, @NotNull String name) {}
 
     @RestController
@@ -76,6 +88,7 @@ class GlobalExceptionHandlerTest {
                 case "disabled" -> throw new DisabledAccountException();
                 case "optimistic" -> throw new ObjectOptimisticLockingFailureException("Loan", "x");
                 case "illegal-argument" -> throw new IllegalArgumentException("El monto debe ser positivo.");
+                case "unmapped" -> throw new UnmappedDomainException();
                 default -> throw new IllegalStateException("secreto interno jdbc:postgresql://db");
             }
         }
@@ -153,7 +166,7 @@ class GlobalExceptionHandlerTest {
         mvc.perform(get("/test/throw/policy"))
                 .andExpect(jsonPath("$.detail").value("Monto fuera de política."));
         mvc.perform(get("/test/throw/optimistic"))
-                .andExpect(jsonPath("$.detail").value("Otra persona cambió este préstamo. Recarga e inténtalo de nuevo."));
+                .andExpect(jsonPath("$.detail").value("Otra persona cambió este registro. Recarga e inténtalo de nuevo."));
     }
 
     @Test
@@ -181,5 +194,42 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.type").value("/problems/loan-not-pending"))
                 .andExpect(jsonPath("$.title").value("Conflict"))
                 .andExpect(jsonPath("$.timestamp", startsWith("20")));
+    }
+
+    @Test
+    void unmappedDomainExceptionIsAnInternalError() throws Exception {
+        mvc.perform(get("/test/throw/unmapped"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.errorId").exists())
+                .andExpect(content().string(not(containsString("sin mapear"))));
+    }
+
+    @Test
+    void methodNotAllowedHasCodeAndTimestamp() throws Exception {
+        mvc.perform(post("/test/size"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.type").value("/problems/method-not-allowed"))
+                .andExpect(jsonPath("$.detail").value("Este método no está permitido en esta ruta."))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void unsupportedMediaTypeHasCodeAndTimestamp() throws Exception {
+        mvc.perform(post("/test/validate").contentType(MediaType.TEXT_PLAIN).content("x"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"))
+                .andExpect(jsonPath("$.detail").value("El tipo de contenido no es compatible. Envía JSON."))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void missingRequestParameterIs400() throws Exception {
+        mvc.perform(get("/test/size"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.detail").value("Falta el parámetro 'size'."))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }
