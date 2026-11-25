@@ -1,5 +1,13 @@
 import { CdkDialogContainer, Dialog, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, Injectable, Type, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injectable,
+  Injector,
+  Type,
+  inject,
+  input,
+} from '@angular/core';
 import { PrButton } from './button';
 import { PrIcon } from './icon';
 
@@ -8,12 +16,16 @@ import { PrIcon } from './icon';
 export class DrawerService {
   private readonly dialog = inject(Dialog);
 
-  open<C, D, R>(component: Type<C>, data: D): DialogRef<R, C> {
+  /** `injector`: el de la pantalla que abre el panel, para que vea los stores de su ruta. */
+  open<C, D, R>(component: Type<C>, data: D, injector?: Injector): DialogRef<R, C> {
     return this.dialog.open<R, D, C>(component, {
       data,
+      injector,
       panelClass: 'pr-drawer-panel',
       backdropClass: 'pr-scrim',
-      autoFocus: 'first-tabbable',
+      // El foco va al primer campo del formulario; si el panel no tiene campos, al panel mismo
+      // (que el CDK anuncia con su título), no a la X de cerrar.
+      autoFocus: '.pr-drawer__body input, .pr-drawer__body textarea, .pr-drawer__body select',
       restoreFocus: true,
     });
   }
@@ -55,6 +67,8 @@ export class PrDrawer {
 
   constructor() {
     // El contenedor del CDK (role="dialog") toma su nombre accesible del título del panel.
-    (this.ref.containerInstance as unknown as CdkDialogContainer)._addAriaLabelledBy(this.titleId);
+    (this.ref.containerInstance as unknown as CdkDialogContainer | undefined)?._addAriaLabelledBy(
+      this.titleId,
+    );
   }
 }
