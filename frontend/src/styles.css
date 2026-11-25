@@ -1,0 +1,7 @@
+@import '@angular/cdk/overlay-prebuilt.css';
+@import '@fontsource/inter-tight/latin-400.css';
+@import '@fontsource/inter-tight/latin-500.css';
+@import '@fontsource/inter-tight/latin-600.css';
+@import './styles/prestemos-tokens.css';
+@import './styles/base.css';
+@import './styles/components.css';
