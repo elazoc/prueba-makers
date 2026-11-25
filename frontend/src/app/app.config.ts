@@ -1,10 +1,21 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { registerLocaleData } from '@angular/common';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import localeEsCO from '@angular/common/locales/es-CO';
+import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { API_BASE_URL } from './core/api/api-config';
+import { problemInterceptor } from './core/api/problem.interceptor';
+
+registerLocaleData(localeEsCO);
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes)
-  ]
+    provideRouter(routes, withComponentInputBinding()),
+    provideHttpClient(withFetch(), withInterceptors([problemInterceptor])),
+    { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
+    { provide: LOCALE_ID, useValue: 'es-CO' },
+  ],
 };
