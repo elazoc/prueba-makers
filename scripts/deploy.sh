@@ -65,7 +65,7 @@ main() {
       docker image inspect "$(imagen "$s"):anterior" >/dev/null 2>&1 \
         && docker tag "$(imagen "$s"):anterior" "$(imagen "$s"):latest"
     done
-    docker compose up -d --no-build --force-recreate </dev/null
+    docker compose up -d --no-build --force-recreate "${SERVICIOS[@]}" </dev/null
   }
 
   if [ "$QUE" = rollback ]; then

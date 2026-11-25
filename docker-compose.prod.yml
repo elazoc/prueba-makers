@@ -95,7 +95,7 @@ services:
     ports:
       - "127.0.0.1:8050:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ | grep -q '<app-root'"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ | grep -q '<app-root'"]
       interval: 10s
       timeout: 5s
       retries: 6
