@@ -74,6 +74,10 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.mock.ts"
+                },
+                {
+                  "replace": "src/environments/mocks-loader.ts",
+                  "with": "src/environments/mocks-loader.mock.ts"
                 }
               ],
               "assets": [
