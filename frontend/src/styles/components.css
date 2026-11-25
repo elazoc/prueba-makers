@@ -1254,3 +1254,31 @@ textarea.pr-input {
     max-width: 400px;
   }
 }
+
+/* Avisos en vivo */
+.pr-live--hidden {
+  display: none;
+}
+.pr-live__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.pr-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--ink-subtle);
+}
+.pr-live__badge--live .pr-live__dot {
+  background: var(--success);
+}
+.pr-live__badge--reconnecting .pr-live__dot,
+.pr-live__badge--connecting .pr-live__dot {
+  background: var(--warning);
+}
