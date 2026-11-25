@@ -56,8 +56,7 @@ for (const theme of ['light', 'dark']) {
 
     for (const route of routes) {
       await page.goto(base + route);
-      await page.waitForLoadState('networkidle').catch(() => undefined);
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(1200);
       const slug = route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'inicio';
       const file = `${outDir}${role}-${slug}-${vp.name}-${theme}.png`;
       await page.screenshot({ path: file, fullPage: true });
