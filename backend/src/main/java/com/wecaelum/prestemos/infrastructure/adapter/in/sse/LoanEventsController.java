@@ -35,6 +35,8 @@ class LoanEventsController {
 
     static final String HEARTBEAT = "heartbeat";
 
+    static final String CONNECTED = "connected";
+
     /** Tells nginx to pass every event through as it is written instead of buffering the response. */
     static final String NO_PROXY_BUFFERING = "X-Accel-Buffering";
 
@@ -56,6 +58,9 @@ class LoanEventsController {
         Flux<ServerSentEvent<LoanEventPayload>> heartbeats = Flux.interval(heartbeat)
                 .map(tick -> ServerSentEvent.<LoanEventPayload>builder().comment(HEARTBEAT).build());
         Flux<ServerSentEvent<LoanEventPayload>> stream = Flux.merge(loanEvents, heartbeats)
+                // Sends the headers and a first comment right away, so the client knows it is connected
+                // without waiting for the first heartbeat.
+                .startWith(ServerSentEvent.<LoanEventPayload>builder().comment(CONNECTED).build())
                 // Completes cleanly so the token behind this stream is checked again on reconnect; the async
                 // request timeout cannot do it because the heartbeat keeps the request active.
                 .take(maxDuration)

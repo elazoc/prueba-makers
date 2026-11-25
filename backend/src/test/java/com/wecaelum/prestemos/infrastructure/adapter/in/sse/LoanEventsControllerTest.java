@@ -18,6 +18,17 @@ class LoanEventsControllerTest {
             new AuthenticatedUser(UserId.newId(), new Email("usuario@test.com"), Role.USER);
 
     @Test
+    void streamStartsWithConnectedCommentWithoutWaitingForHeartbeat() {
+        var controller = new LoanEventsController(
+                new LoanEventBus(), new SseProperties(Duration.ofMinutes(10), Duration.ofMinutes(30)));
+
+        StepVerifier.create(controller.events(USER).getBody().take(1))
+                .assertNext(event -> assertThat(event.comment()).isEqualTo(LoanEventsController.CONNECTED))
+                .expectComplete()
+                .verify(Duration.ofSeconds(1));
+    }
+
+    @Test
     void streamCompletesAfterMaxDuration() {
         var controller = new LoanEventsController(
                 new LoanEventBus(), new SseProperties(Duration.ofMillis(100), Duration.ofMillis(500)));
@@ -26,7 +37,8 @@ class LoanEventsControllerTest {
 
         assertThat(stream).isNotNull();
         StepVerifier.create(stream)
-                .thenConsumeWhile(event -> LoanEventsController.HEARTBEAT.equals(event.comment()))
+                .thenConsumeWhile(event -> LoanEventsController.HEARTBEAT.equals(event.comment())
+                        || LoanEventsController.CONNECTED.equals(event.comment()))
                 .expectComplete()
                 .verify(Duration.ofSeconds(3));
     }
