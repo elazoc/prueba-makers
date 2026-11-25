@@ -143,7 +143,7 @@ infrastructure  adaptadores: web (REST), persistencia (JPA), seguridad (JWT), ev
 préstamo se prueban sin Spring. Las entidades JPA están separadas del modelo de dominio y se
 mapean a mano. Concesión pragmática: `@Transactional` en los servicios de aplicación.
 
-**Spring MVC con hilos virtuales, no WebFlux.** El enunciado pide JPA, y JPA es bloqueante:
+**Spring MVC con hilos virtuales; WebFlux solo donde aporta.** El enunciado pide JPA, y JPA es bloqueante:
 mezclarlo con WebFlux bloquearía el event loop o obligaría a envolver todo en `boundedElastic`,
 que es volver a un hilo por petición con más complejidad. Con Java 21 y
 `spring.threads.virtual.enabled=true`, MVC atiende miles de peticiones concurrentes con código
@@ -198,6 +198,7 @@ para no revelar que existe.
 | Casos de uso (Mockito) | `LoanCommandServiceTest`, `UserServiceTest`, `AuthServiceTest`, `RefreshSessionTest` |
 | Web y seguridad | `LoanControllerTest`, `GlobalExceptionHandlerTest`, `SecurityIT`, `AuthControllerIT` |
 | Flujos completos | `LoanFlowIT` (incluye la aprobación concurrente), `RefreshFlowIT`, `UserAdminIT` |
+| Avisos en vivo | `LoanEventBusTest` (emisiones en paralelo sin pérdida), `LoanEventsSseIT` (SSE real con login) |
 | PostgreSQL real | `*PostgresIT` con Testcontainers |
 | Arquitectura | `ArchitectureTest` (ArchUnit) |
 
