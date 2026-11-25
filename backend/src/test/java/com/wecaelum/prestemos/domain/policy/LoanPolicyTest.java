@@ -47,4 +47,18 @@ class LoanPolicyTest {
                 .hasMessage("Ya tienes 3 préstamos pendientes. Espera a que se resuelva alguno para pedir otro.");
         assertThatCode(() -> policy.checkPendingCount(2)).doesNotThrowAnyException();
     }
+
+    @Test
+    void rejectsInconsistentLimits() {
+        BigDecimal ten = BigDecimal.TEN;
+        BigDecimal hundred = new BigDecimal("100");
+        assertThatThrownBy(() -> new LoanPolicy(null, hundred, 1, 12, 3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(ten, null, 1, 12, 3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(BigDecimal.ZERO, hundred, 1, 12, 3))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(hundred, ten, 1, 12, 3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(ten, hundred, 0, 12, 3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(ten, hundred, 13, 12, 3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LoanPolicy(ten, hundred, 1, 12, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
 }

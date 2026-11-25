@@ -11,6 +11,21 @@ import java.util.Locale;
 public record LoanPolicy(
         BigDecimal minAmount, BigDecimal maxAmount, int minTermMonths, int maxTermMonths, int maxPendingPerUser) {
 
+    public LoanPolicy {
+        if (minAmount == null || maxAmount == null) {
+            throw new IllegalArgumentException("Policy amounts must not be null.");
+        }
+        if (minAmount.signum() <= 0 || minAmount.compareTo(maxAmount) > 0) {
+            throw new IllegalArgumentException("Policy amounts must satisfy 0 < minAmount <= maxAmount.");
+        }
+        if (minTermMonths < 1 || minTermMonths > maxTermMonths) {
+            throw new IllegalArgumentException("Policy terms must satisfy 1 <= minTermMonths <= maxTermMonths.");
+        }
+        if (maxPendingPerUser < 1) {
+            throw new IllegalArgumentException("Policy maxPendingPerUser must be at least 1.");
+        }
+    }
+
     public void checkAmountAndTerm(Amount amount, LoanTerm term) {
         if (amount.value().compareTo(minAmount) < 0) {
             throw new LoanPolicyViolationException("El monto mínimo es $ " + money(minAmount) + ".");

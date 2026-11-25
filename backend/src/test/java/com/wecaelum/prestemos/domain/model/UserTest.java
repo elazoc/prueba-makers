@@ -45,4 +45,40 @@ class UserTest {
         assertThatThrownBy(() -> User.register(email, "hash", "x".repeat(101), Role.USER, T0))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void toStringHidesPasswordHash() {
+        User user = User.register(new Email("a@b.co"), "secret-hash-123", "Ana Pérez", Role.USER, T0);
+
+        assertThat(user.toString()).doesNotContain("secret-hash-123").contains("[PROTECTED]");
+    }
+
+    @Test
+    void rejectsMissingMandatoryFields() {
+        UserId id = UserId.newId();
+        Email email = new Email("a@b.co");
+        assertThatThrownBy(() -> new User(null, email, "h", "Ana Pérez", Role.USER, true, T0, T0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new User(id, null, "h", "Ana Pérez", Role.USER, true, T0, T0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new User(id, email, null, "Ana Pérez", Role.USER, true, T0, T0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new User(id, email, "h", "Ana Pérez", null, true, T0, T0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new User(id, email, "h", "Ana Pérez", Role.USER, true, null, T0, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new User(id, email, "h", "Ana Pérez", Role.USER, true, T0, null, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void valueObjectsAreSerializableButUserIsNot() {
+        assertThat(java.io.Serializable.class)
+                .isAssignableFrom(LoanId.class)
+                .isAssignableFrom(UserId.class)
+                .isAssignableFrom(Amount.class)
+                .isAssignableFrom(LoanTerm.class)
+                .isAssignableFrom(Email.class);
+        assertThat(java.io.Serializable.class.isAssignableFrom(User.class)).isFalse();
+    }
 }

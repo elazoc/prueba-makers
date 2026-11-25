@@ -17,6 +17,12 @@ public record User(
     private static final int MAX_NAME = 100;
 
     public User {
+        require(id, "id");
+        require(email, "email");
+        require(passwordHash, "passwordHash");
+        require(role, "role");
+        require(createdAt, "createdAt");
+        require(updatedAt, "updatedAt");
         fullName = validName(fullName);
     }
 
@@ -26,6 +32,19 @@ public record User(
 
     public User changeProfile(String fullName, Role role, boolean active, Instant now) {
         return new User(id, email, passwordHash, fullName, role, active, createdAt, now, version);
+    }
+
+    @Override
+    public String toString() {
+        return "User[id=" + id + ", email=" + email + ", passwordHash=[PROTECTED], fullName=" + fullName
+                + ", role=" + role + ", active=" + active + ", createdAt=" + createdAt
+                + ", updatedAt=" + updatedAt + ", version=" + version + "]";
+    }
+
+    private static void require(Object value, String field) {
+        if (value == null) {
+            throw new IllegalArgumentException("El campo " + field + " del usuario es obligatorio.");
+        }
     }
 
     private static String validName(String raw) {
