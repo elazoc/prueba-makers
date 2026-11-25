@@ -96,6 +96,14 @@ describe('LiveEventsService', () => {
     expect(service.status()).toBe('off');
   });
 
+  it('gives up quietly when the server has no live events', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+    service.connect();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(service.status()).toBe('off');
+  });
+
   it('does not connect without a session', () => {
     auth.accessToken.set(null);
     service.connect();

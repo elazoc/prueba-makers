@@ -88,6 +88,11 @@ export class LiveEventsService implements OnDestroy {
         else this.disconnect();
         return;
       }
+      // El servidor no ofrece avisos en vivo (404/405/406/501): no se insiste ni se muestra el indicador.
+      if ([404, 405, 406, 501].includes(res.status)) {
+        this.disconnect();
+        return;
+      }
       if (!res.ok || !res.body) throw new Error(`SSE ${res.status}`);
 
       this.state.set('live');
