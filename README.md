@@ -203,12 +203,3 @@ para no revelar que existe.
 | Arquitectura | `ArchitectureTest` (ArchUnit) |
 
 `./mvnw verify` genera además el informe de cobertura en `backend/target/site/jacoco/`.
-
-## Límites conocidos y trabajo futuro
-
-- Frente: faltan las pruebas de punta a punta (Playwright); hoy tiene 211 pruebas unitarias y de componentes (Vitest).
-- La regla de "máximo 3 pendientes" puede admitir un cuarto si el mismo usuario envía dos
-  solicitudes exactamente a la vez.
-- El bus de los avisos en vivo y la caché viven en memoria y sirven a una sola instancia: con
-  varias harían falta Redis pub/sub o un broker.
-- Sin cálculo de intereses ni cuotas, sin recuperación de contraseña y sin rate limiting en el login.
