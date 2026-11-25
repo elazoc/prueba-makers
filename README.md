@@ -54,7 +54,9 @@ npm run lint         # ESLint y reglas de marca
 - **Usuario:** ingresa, solicita un préstamo (monto con formato colombiano y plazo con atajos),
   lo edita o cancela mientras esté pendiente y sigue su estado, con el motivo si lo rechazan.
 - **Administrador:** ve las solicitudes de la más antigua a la más reciente, filtra por estado o
-  por correo, aprueba con confirmación y rechaza con un motivo que el solicitante verá.
+  por correo, aprueba con confirmación y rechaza con un motivo que el solicitante verá. También
+  administra usuarios: crea cuentas con cualquier rol, cambia nombre, rol o estado, y desactiva
+  cuentas sin borrarlas (no puede quitarse el rol ni desactivarse a sí mismo).
 - **Ingreso y registro**, con botones para llenar los usuarios de prueba.
 - Funciona en computador y en celular, en tema claro u oscuro.
 
@@ -203,7 +205,7 @@ para no revelar que existe.
 
 ## Límites conocidos y trabajo futuro
 
-- Frente: faltan la administración de usuarios y las pruebas de punta a punta (Playwright).
+- Frente: faltan las pruebas de punta a punta (Playwright); hoy tiene 211 pruebas unitarias y de componentes (Vitest).
 - La regla de "máximo 3 pendientes" puede admitir un cuarto si el mismo usuario envía dos
   solicitudes exactamente a la vez.
 - El bus de los avisos en vivo y la caché viven en memoria y sirven a una sola instancia: con
