@@ -8,6 +8,13 @@ const RANGE_TERM = 'El plazo va de 1 a 120 meses.';
 /** El orden importa: se muestra el primer error que aplique. */
 const MESSAGES: [string, Describe][] = [
   ['server', (detail) => String(detail)],
+  [
+    'moneyFormat',
+    (reason) =>
+      reason === 'decimals'
+        ? 'Usa máximo 2 decimales.'
+        : 'Escribe el monto sin centavos o con coma decimal, por ejemplo 1.500.000.',
+  ],
   ['required', () => 'Completa este campo.'],
   ['email', () => 'Escribe un correo válido, por ejemplo nombre@correo.com.'],
   ['minlength', (d) => `Usa al menos ${(d as { requiredLength: number }).requiredLength} caracteres.`],

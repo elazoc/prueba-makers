@@ -1,1 +1,289 @@
 /* Componentes compartidos (prefijo pr-). Siempre con tokens: nunca valores sueltos. */
+
+/* Ícono */
+.pr-icon {
+  display: inline-flex;
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+.pr-icon--sm {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+.pr-icon--lg {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+.pr-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Cargador: un punto que recorre un anillo */
+.pr-spinner {
+  display: inline-flex;
+  flex: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--action);
+}
+.pr-spinner svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.pr-spinner__ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 0.25;
+}
+.pr-spinner__dot {
+  fill: currentColor;
+}
+.pr-spinner__orbit {
+  transform-origin: 10px 10px;
+  animation: pr-orbit 900ms linear infinite;
+}
+.pr-spinner--on-action {
+  color: var(--on-action);
+}
+.pr-spinner--lg {
+  width: var(--control-lg);
+  height: var(--control-lg);
+}
+@keyframes pr-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* El cargador es lo único que se mueve en bucle: más lento, no quieto. */
+  .pr-spinner__orbit {
+    animation-duration: 2700ms !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* Botón */
+.pr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+.pr-btn__content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pr-btn__content[hidden] {
+  display: none;
+}
+.pr-btn--primary {
+  background: var(--action);
+  color: var(--on-action);
+}
+.pr-btn--primary:hover {
+  background: var(--action-hover);
+}
+.pr-btn--secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-control);
+}
+.pr-btn--secondary:hover {
+  background: var(--surface-hover);
+}
+.pr-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+.pr-btn--ghost:hover {
+  background: var(--surface-hover);
+}
+.pr-btn--danger {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+.pr-btn--danger:hover {
+  filter: brightness(0.92);
+}
+.pr-btn--sm {
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  font-size: 13px;
+}
+.pr-btn--lg {
+  height: var(--control-lg);
+  padding: 0 var(--space-5);
+  font-size: 16px;
+}
+.pr-btn--icon {
+  width: var(--control-md);
+  padding: 0;
+}
+.pr-btn--icon.pr-btn--sm {
+  width: var(--control-sm);
+}
+.pr-btn--loading {
+  cursor: progress;
+}
+.pr-btn:disabled,
+.pr-btn[aria-disabled='true']:not(.pr-btn--loading) {
+  background: var(--surface-sunken);
+  color: var(--ink-subtle);
+  border-color: transparent;
+  cursor: not-allowed;
+  filter: none;
+}
+@media (max-width: 767px) {
+  /* En el celular todo lo tocable mide al menos 44 px. */
+  .pr-btn,
+  .pr-btn--sm {
+    min-height: 44px;
+  }
+  .pr-btn--icon,
+  .pr-btn--icon.pr-btn--sm {
+    min-width: 44px;
+  }
+}
+
+/* Campo */
+.pr-field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pr-field__label {
+  font-weight: 500;
+  color: var(--ink);
+}
+.pr-field__message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+.pr-field__message .pr-icon {
+  margin-top: 1px;
+}
+.pr-field__message--error {
+  color: var(--danger);
+}
+.pr-input {
+  width: 100%;
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-control);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 120ms ease-out;
+}
+textarea.pr-input {
+  height: auto;
+  min-height: calc(var(--control-md) * 3);
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+}
+.pr-input::placeholder {
+  color: var(--ink-subtle);
+}
+.pr-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.pr-input:disabled {
+  background: var(--surface-sunken);
+  color: var(--ink-subtle);
+  cursor: not-allowed;
+}
+.pr-field--error .pr-input {
+  border-color: var(--danger);
+}
+@media (max-width: 767px) {
+  .pr-input {
+    min-height: 44px;
+    font-size: 16px; /* evita el zoom automático de iOS */
+  }
+}
+
+/* Insignia */
+.pr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pr-badge--neutral {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+.pr-badge--success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.pr-badge--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.pr-badge--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.pr-badge--info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+/* Logo */
+.pr-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  --pr-logo-ink: var(--sky);
+  --pr-logo-accent: var(--action);
+  color: var(--ink);
+}
+.pr-logo--on-sky {
+  --pr-logo-ink: var(--sky-ink);
+  --pr-logo-accent: var(--tenant-on-sky);
+  color: var(--sky-ink);
+}
+.pr-logo__ink {
+  stroke: var(--pr-logo-ink);
+}
+.pr-logo__accent {
+  fill: var(--pr-logo-accent);
+}
+.pr-logo__name {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.dark .pr-logo:not(.pr-logo--on-sky) {
+  --pr-logo-ink: var(--ink);
+}
