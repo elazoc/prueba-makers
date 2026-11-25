@@ -10,9 +10,14 @@ import com.wecaelum.prestemos.domain.model.LoanId;
 import com.wecaelum.prestemos.domain.model.LoanStatus;
 import com.wecaelum.prestemos.domain.model.UserId;
 import java.util.Optional;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+/**
+ * Only the two query reads are cached; commands read through {@link #findByIdForUpdate} and never see the cache.
+ * The entries are evicted after commit by {@code CacheEvictionListener} (design section 10).
+ */
 @Component
 class LoanPersistenceAdapter implements LoanRepository {
 
@@ -33,11 +38,13 @@ class LoanPersistenceAdapter implements LoanRepository {
     }
 
     @Override
+    @Cacheable(cacheNames = "loanById", key = "#id.value()", unless = "#result == null")
     public Optional<Loan> findById(LoanId id) {
         return repository.findById(id.value()).map(LoanJpaMapper::toDomain);
     }
 
     @Override
+    @Cacheable(cacheNames = "loansByApplicant", key = "#applicantId.value() + ':' + #statusOrNull + ':' + #query")
     public PageResult<Loan> findByApplicant(UserId applicantId, LoanStatus statusOrNull, PageQuery query) {
         Page<LoanJpaEntity> page =
                 repository.findByApplicant(applicantId.value(), statusOrNull, SortWhitelist.loans(query));

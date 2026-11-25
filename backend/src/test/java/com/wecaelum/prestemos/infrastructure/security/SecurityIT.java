@@ -30,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -46,7 +47,9 @@ import org.springframework.transaction.annotation.Transactional;
  * a denied request gets 401/403, an allowed one reaches the dispatcher and gets 404 until its controller exists.
  * <p>
  * MockMvc calls run in the test thread, inside the rolled-back test transaction, so the throwaway users these
- * tests create, demote or deactivate never touch the seeded ones nor outlive the test.
+ * tests create, demote or deactivate never touch the seeded ones nor outlive the test. Because that transaction
+ * never commits, the after-commit eviction of the cached user snapshot never runs either: the tests that change a
+ * user evict it themselves (see {@link #evictAuthSnapshot}).
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -69,6 +72,9 @@ class SecurityIT {
 
     @Autowired
     private JwtEncoder encoder;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @LocalServerPort
     private int port;
@@ -135,6 +141,7 @@ class SecurityIT {
                 .andExpect(notDeniedBySecurity());
 
         users.deactivate(user.id(), SEEDED_ADMIN);
+        evictAuthSnapshot(user.id());
 
         mvc.perform(get("/api/v1/me/loans").header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isUnauthorized())
@@ -152,6 +159,7 @@ class SecurityIT {
                 .andExpect(notDeniedBySecurity());
 
         users.update(new UpdateUserCommand(admin.id(), SEEDED_ADMIN, admin.fullName(), Role.USER, true));
+        evictAuthSnapshot(admin.id());
 
         mvc.perform(post(APPROVE).header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isForbidden())
@@ -270,6 +278,14 @@ class SecurityIT {
         return result -> assertThat(result.getResponse().getStatus())
                 .as("security must let the request through to the dispatcher")
                 .isNotIn(401, 403);
+    }
+
+    /**
+     * Does what {@code CacheEvictionListener} does once a user change commits, since the test transaction is
+     * rolled back instead. The real eviction is covered by {@code CacheBehaviourIT} and {@code UserAdminIT}.
+     */
+    private void evictAuthSnapshot(UserId id) {
+        cacheManager.getCache("userAuthById").evict(id.value());
     }
 
     private User freshUser(Role role) {

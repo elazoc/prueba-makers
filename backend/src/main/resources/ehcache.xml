@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ehcache 3 behind JCache (JSR-107). Statistics on, so Actuator can publish cache.gets, cache.puts, etc.
+  Entries are evicted after commit by CacheEvictionListener; the TTL only bounds the narrow race described in
+  the design (a read that took the old state just before the commit and stored it after the eviction).
+  Values have no declared type: JCache stores Spring's null marker too, and the cached types are Serializable.
+-->
+<config xmlns="http://www.ehcache.org/v3"
+        xmlns:jsr107="http://www.ehcache.org/v3/jsr107">
+
+  <service>
+    <jsr107:defaults enable-statistics="true" enable-management="false"/>
+  </service>
+
+  <!-- Domain Loan by id. -->
+  <cache alias="loanById">
+    <key-type>java.util.UUID</key-type>
+    <expiry>
+      <ttl unit="minutes">5</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <!-- A user's page of loans, keyed "applicantId:status:pageQuery"; cleared whole on any loan change. -->
+  <cache alias="loansByApplicant">
+    <key-type>java.lang.String</key-type>
+    <expiry>
+      <ttl unit="minutes">2</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+    </resources>
+  </cache>
+
+  <!-- Role and active flag of a token's user, read on every authenticated request. -->
+  <cache alias="userAuthById">
+    <key-type>java.util.UUID</key-type>
+    <expiry>
+      <ttl unit="minutes">10</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+</config>
