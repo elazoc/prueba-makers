@@ -37,6 +37,65 @@ curl -s -X POST localhost:8080/api/v1/loans -H "Authorization: Bearer $TOKEN" \
 curl -s localhost:8080/api/v1/me/loans -H "Authorization: Bearer $TOKEN"
 ```
 
+## Frente (Angular)
+
+Angular 22 (standalone, zoneless y signals) en `frontend/`, con diseño propio sobre la identidad
+visual del proyecto y logo «P». Necesita Node 24.
+
+```bash
+cd frontend
+npm install
+npm start            # http://localhost:4200 contra el backend en :8080 (proxy de /api)
+npm run start:mock   # sin backend: simulador de la API con los mismos usuarios y datos de demo
+npm test             # pruebas unitarias (Vitest)
+npm run lint         # ESLint y reglas de marca
+```
+
+- **Usuario:** ingresa, solicita un préstamo (monto con formato colombiano y plazo con atajos),
+  lo edita o cancela mientras esté pendiente y sigue su estado, con el motivo si lo rechazan.
+- **Administrador:** ve las solicitudes de la más antigua a la más reciente, filtra por estado o
+  por correo, aprueba con confirmación y rechaza con un motivo que el solicitante verá.
+- **Ingreso y registro**, con botones para llenar los usuarios de prueba.
+- Funciona en computador y en celular, en tema claro u oscuro.
+
+### Decisiones técnicas del frente
+
+**Estado con NgRx SignalStore.** Un store por pantalla, provisto en su ruta, más un `AuthStore`
+global. El servidor es la fuente de verdad: después de cada comando se vuelve a pedir la página.
+No hay actualizaciones optimistas en decisiones de dinero: «Aprobar» muestra «Decidiendo…» hasta
+que el servidor confirma. `switchMap` descarta respuestas viejas al cambiar de filtro, y un doble
+clic envía una sola petición. Los filtros y la página viven en la URL.
+
+**Sesión.** El token de acceso vive solo en memoria y nunca en `localStorage` ni en
+`sessionStorage`. El refresh token lo guarda el backend en una cookie `HttpOnly`. Al cargar la
+página, el frente renueva la sesión con esa cookie, y la renueva en silencio un minuto antes de que
+venza. Entre pestañas, la renovación pasa por la Web Locks API para que la rotación del refresh
+token no choque, y cerrar sesión en una pestaña la cierra en las demás. Si la cookie pasa a ser de
+otra cuenta, porque alguien ingresó con otra en otra pestaña, la pestaña cierra su sesión en vez de
+cambiar de identidad.
+
+**Guards e interceptores.** Los guards (`canMatch`) ordenan la experiencia, y el código de
+administración ni se descarga para un usuario. La seguridad la pone el backend. Un interceptor
+agrega el `Bearer` solo a `/api`. Ante un 401 renueva una vez, con una renovación compartida por
+todas las peticiones, y reintenta. Otro interceptor convierte los Problem Details en errores
+tipados con el mensaje del servidor.
+
+**Formularios y montos.** Formularios reactivos tipados. Los errores salen debajo de cada campo y,
+al enviar, el foco va al primero inválido. Los montos viajan y se comparan como texto decimal o
+`BigInt`, nunca como `number`. «1,500,000.00» se rechaza en vez de adivinar el formato.
+
+**Avisos en vivo.** SSE con `fetch` y `Authorization: Bearer`, porque `EventSource` no permite
+cabeceras y el token en la URL quedaría en logs. Reconecta con espera creciente y no insiste si el
+servidor aún no ofrece la ruta.
+
+**Simulador.** MSW reproduce el contrato de la API, incluidos los errores, la rotación del
+refresh token y el SSE. Así el frente se construyó en paralelo con el backend. Se excluye de la
+build de producción por reemplazo de archivos, no con un `if`.
+
+**Accesibilidad.** Etiquetas visibles con `aria-describedby`, foco visible y atrapado en los
+diálogos, objetivos táctiles de al menos 44 px en el celular, estados siempre con palabra y no
+solo con color, y movimiento reducido. Regla de marca automática en `npm run lint`.
+
 ## API (`/api/v1`)
 
 | Método y ruta | Quién | Qué hace |
@@ -137,7 +196,8 @@ para no revelar que existe.
 
 ## Límites conocidos y trabajo futuro
 
-- Avisos en vivo con SSE (diseñados, pendientes).
+- Avisos en vivo con SSE: el frente ya los consume; en el backend están diseñados y pendientes.
+- Frente: faltan la administración de usuarios y las pruebas de punta a punta (Playwright).
 - La regla de "máximo 3 pendientes" puede admitir un cuarto si el mismo usuario envía dos
   solicitudes exactamente a la vez.
 - El bus de eventos y la caché viven en memoria: con varias instancias harían falta Redis o un
