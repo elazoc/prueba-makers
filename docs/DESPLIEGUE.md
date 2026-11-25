@@ -42,12 +42,23 @@ El script trae `main`, construye las imágenes mientras la versión anterior sig
 las pone en marcha y comprueba que la app responda. Si la versión nueva no responde, vuelve a la
 anterior.
 
+## Archivos
+
+- `docker-compose.prod.yml`: el compose de producción, independiente del de desarrollo.
+- `scripts/deploy.sh`: el despliegue (y `rollback` para volver a la imagen anterior).
+- En el servidor, fuera de git: `.env` (`COMPOSE_PROJECT_NAME`, `COMPOSE_FILE`, `DB_PASSWORD`) y
+  `secrets/` (`jwt-private.pem` en PKCS#8 y `jwt-public.pem` en X.509).
+
+El backend se compila en un contenedor desechable limitado a un núcleo, para no quitarles CPU a
+los demás proyectos del servidor, y la imagen final solo empaqueta el jar sobre un JRE, con un
+usuario sin privilegios.
+
 ## Estado
 
 | Paso | Estado |
 |---|---|
 | Dominio, HTTPS y nginx del servidor | Listo (2026-11-25) |
-| Repositorio en GitHub | En curso |
-| Carpeta, `.env` y claves en el servidor | Pendiente |
-| `docker-compose.prod.yml` y `scripts/deploy.sh` | Pendiente: dependen del `docker-compose.yml` y los Dockerfile del back y del front |
-| Primer despliegue | Pendiente |
+| Repositorio en GitHub | Listo |
+| Carpeta, `.env` y claves en el servidor | Listo |
+| Backend (API + Swagger) con PostgreSQL | Desplegado; mientras no esté el front atiende directo en `127.0.0.1:8050` |
+| Front | Pendiente: cuando su Dockerfile esté en `main`, el puerto 8050 pasa al servicio `frontend` y el backend queda sin puertos |
