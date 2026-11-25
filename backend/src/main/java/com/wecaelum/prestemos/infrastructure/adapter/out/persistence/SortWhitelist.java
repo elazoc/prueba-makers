@@ -18,7 +18,11 @@ final class SortWhitelist {
         return loans(query, "");
     }
 
-    /** {@code prefix} is the JPQL alias with a dot (for example {@code "l."}), or empty for derived queries. */
+    /**
+     * {@code prefix} is prepended to every sort property: the JPQL alias with a dot (for example {@code "l."})
+     * when the query needs it, or empty when Spring Data resolves the property by itself (derived queries
+     * and single-entity {@code @Query}).
+     */
     static Pageable loans(PageQuery query, String prefix) {
         return page(query, LOAN_FIELDS, "requestedAt", prefix);
     }
@@ -35,7 +39,7 @@ final class SortWhitelist {
             direction = Sort.Direction.DESC;
         } else {
             if (!allowed.contains(field)) {
-                throw new IllegalArgumentException("Campo de orden no permitido: " + field);
+                throw new IllegalArgumentException("Sort field not allowed: " + field);
             }
             direction = query.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
         }

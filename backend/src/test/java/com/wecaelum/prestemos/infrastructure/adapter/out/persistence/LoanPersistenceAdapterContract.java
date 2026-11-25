@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Shared cases run against H2 and against PostgreSQL. */
@@ -58,6 +58,7 @@ abstract class LoanPersistenceAdapterContract {
 
         Loan saved = loans.save(fresh);
         em.flush();
+        em.clear();
 
         assertThat(saved.version()).isZero();
         Loan read = loans.findById(fresh.id()).orElseThrow();
@@ -85,7 +86,7 @@ abstract class LoanPersistenceAdapterContract {
                     loans.save(second);
                     em.flush();
                 })
-                .isInstanceOf(OptimisticLockingFailureException.class);
+                .isExactlyInstanceOf(ObjectOptimisticLockingFailureException.class);
     }
 
     @Test
