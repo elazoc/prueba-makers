@@ -2,7 +2,7 @@
 
 Sistema de gestión de préstamos bancarios: el usuario solicita un préstamo (monto y plazo) y
 consulta su estado; el administrador lo aprueba o lo rechaza. API REST en **Spring Boot 4.2 /
-Java 21** con arquitectura hexagonal. Marca Caelum.
+Java 21** con arquitectura hexagonal.
 
 - **En vivo:** https://prestamos.nebulasoftware.app (ver [despliegue](docs/DESPLIEGUE.md))
 - **Parte teórica:** [Parte teórica](docs/Prueba%20teorica%20Java%20Angular.pdf)
