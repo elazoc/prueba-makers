@@ -1,5 +1,7 @@
 package com.wecaelum.prestemos.architecture;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -14,4 +16,10 @@ class ArchitectureTest {
     static final ArchRule domainIsPure = noClasses().that().resideInAPackage("..domain..")
             .should().dependOnClassesThat()
             .resideInAnyPackage("org.springframework..", "jakarta..", "org.hibernate..", "tools.jackson..");
+
+    @ArchTest
+    static final ArchRule applicationUsesOnlyTransactionalFromSpring = noClasses().that().resideInAPackage("..application..")
+            .should().dependOnClassesThat(
+                    resideInAPackage("org.springframework..").and(not(resideInAPackage("org.springframework.transaction.annotation"))))
+            .orShould().dependOnClassesThat().resideInAnyPackage("jakarta..", "org.hibernate..", "tools.jackson..", "..infrastructure..");
 }
