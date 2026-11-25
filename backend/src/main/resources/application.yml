@@ -18,3 +18,23 @@ spring:
   h2:
     console:
       enabled: true
+
+security:
+  jwt:
+    issuer: prestemos
+    ttl: 60m
+    # PEM keys for production (both or neither); without them a key pair is generated at startup.
+    # public-key: file:/run/secrets/jwt-public.pem
+    # private-key: file:/run/secrets/jwt-private.pem
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200
+
+loans:
+  policy:
+    min-amount: 100.00
+    max-amount: 50000000.00
+    min-term-months: 1
+    max-term-months: 120
+    max-pending-per-user: 3

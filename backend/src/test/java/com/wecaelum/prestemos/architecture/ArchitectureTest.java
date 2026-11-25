@@ -22,4 +22,8 @@ class ArchitectureTest {
             .should().dependOnClassesThat(
                     resideInAPackage("org.springframework..").and(not(resideInAPackage("org.springframework.transaction.annotation"))))
             .orShould().dependOnClassesThat().resideInAnyPackage("jakarta..", "org.hibernate..", "tools.jackson..", "..infrastructure..");
+
+    @ArchTest
+    static final ArchRule securityReadsUsersThroughThePort = noClasses().that().resideInAPackage("..infrastructure.security..")
+            .should().dependOnClassesThat().resideInAPackage("..infrastructure.adapter.out.persistence..");
 }
