@@ -67,6 +67,13 @@ class LoanTest {
     }
 
     @Test
+    void decisionsRequireAnAdmin() {
+        assertThatThrownBy(() -> pending.approve(null, T1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> pending.reject(null, "Motivo válido", T1))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void rejectRequiresReason() {
         assertThatThrownBy(() -> pending.reject(admin, "   ", T1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> pending.reject(admin, "abc", T1)).isInstanceOf(IllegalArgumentException.class);

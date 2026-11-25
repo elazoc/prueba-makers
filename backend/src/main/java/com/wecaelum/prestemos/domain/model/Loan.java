@@ -38,12 +38,14 @@ public record Loan(
 
     public Loan approve(UserId adminId, Instant now) {
         requirePending();
+        require(adminId, "adminId");
         return new Loan(
                 id, applicantId, amount, term, LoanStatus.APPROVED, requestedAt, now, adminId, null, version);
     }
 
     public Loan reject(UserId adminId, String reason, Instant now) {
         requirePending();
+        require(adminId, "adminId");
         String clean = reason == null ? "" : reason.trim();
         if (clean.length() < MIN_REASON || clean.length() > MAX_REASON) {
             throw new IllegalArgumentException("El motivo debe tener entre 5 y 500 caracteres.");
