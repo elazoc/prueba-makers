@@ -27,6 +27,10 @@ class DomainExceptionsTest {
                         "CANNOT_DEACTIVATE_SELF",
                         "No puedes desactivar tu propia cuenta."),
                 Arguments.of(
+                        new CannotDemoteSelfException(),
+                        "CANNOT_DEMOTE_SELF",
+                        "No puedes quitarte el rol de administrador."),
+                Arguments.of(
                         new LoanPolicyViolationException("El plazo es inválido."),
                         "LOAN_POLICY_VIOLATION",
                         "El plazo es inválido."));

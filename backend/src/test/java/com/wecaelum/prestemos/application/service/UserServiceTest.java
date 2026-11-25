@@ -19,6 +19,7 @@ import com.wecaelum.prestemos.application.port.out.PasswordHasher;
 import com.wecaelum.prestemos.application.port.out.UserRepository;
 import com.wecaelum.prestemos.domain.event.UserChanged;
 import com.wecaelum.prestemos.domain.exception.CannotDeactivateSelfException;
+import com.wecaelum.prestemos.domain.exception.CannotDemoteSelfException;
 import com.wecaelum.prestemos.domain.exception.EmailAlreadyRegisteredException;
 import com.wecaelum.prestemos.domain.exception.UserNotFoundException;
 import com.wecaelum.prestemos.domain.model.Email;
@@ -112,6 +113,27 @@ class UserServiceTest {
         assertThatThrownBy(() -> service().deactivate(me, me)).isInstanceOf(CannotDeactivateSelfException.class);
         assertThatThrownBy(() -> service().update(new UpdateUserCommand(me, me, "Admin Demo", Role.ADMIN, false)))
                 .isInstanceOf(CannotDeactivateSelfException.class);
+        verify(repo, never()).save(any());
+        verifyNoInteractions(publisher);
+    }
+
+    @Test
+    void adminCannotDemoteSelf() {
+        UserId me = UserId.newId();
+
+        assertThatThrownBy(() -> service().update(new UpdateUserCommand(me, me, "Admin Demo", Role.USER, true)))
+                .isInstanceOf(CannotDemoteSelfException.class);
+        verify(repo, never()).save(any());
+        verifyNoInteractions(publisher);
+    }
+
+    @Test
+    void deactivatingAnAlreadyInactiveUserDoesNothing() {
+        User user = existing(Role.USER, false);
+        when(repo.findById(user.id())).thenReturn(Optional.of(user));
+
+        service().deactivate(user.id(), UserId.newId());
+
         verify(repo, never()).save(any());
         verifyNoInteractions(publisher);
     }

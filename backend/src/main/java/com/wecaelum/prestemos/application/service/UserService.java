@@ -12,6 +12,7 @@ import com.wecaelum.prestemos.application.port.out.PasswordHasher;
 import com.wecaelum.prestemos.application.port.out.UserRepository;
 import com.wecaelum.prestemos.domain.event.UserChanged;
 import com.wecaelum.prestemos.domain.exception.CannotDeactivateSelfException;
+import com.wecaelum.prestemos.domain.exception.CannotDemoteSelfException;
 import com.wecaelum.prestemos.domain.exception.EmailAlreadyRegisteredException;
 import com.wecaelum.prestemos.domain.exception.UserNotFoundException;
 import com.wecaelum.prestemos.domain.model.Email;
@@ -54,6 +55,9 @@ public class UserService implements RegisterUserUseCase, ManageUsersUseCase {
         if (!command.active() && command.id().equals(command.actingAdmin())) {
             throw new CannotDeactivateSelfException();
         }
+        if (command.role() != Role.ADMIN && command.id().equals(command.actingAdmin())) {
+            throw new CannotDemoteSelfException();
+        }
         User user = find(command.id());
         Instant now = clock.instant();
         User saved = users.save(user.changeProfile(command.fullName(), command.role(), command.active(), now));
@@ -68,6 +72,9 @@ public class UserService implements RegisterUserUseCase, ManageUsersUseCase {
             throw new CannotDeactivateSelfException();
         }
         User user = find(target);
+        if (!user.active()) {
+            return;
+        }
         Instant now = clock.instant();
         User saved = users.save(user.changeProfile(user.fullName(), user.role(), false, now));
         events.publish(new UserChanged(saved.id(), now));
