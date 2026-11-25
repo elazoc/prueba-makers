@@ -12,14 +12,21 @@ import com.wecaelum.prestemos.application.exception.DisabledAccountException;
 import com.wecaelum.prestemos.application.exception.InvalidCredentialsException;
 import com.wecaelum.prestemos.application.model.AuthResult;
 import com.wecaelum.prestemos.application.model.IssuedToken;
+import com.wecaelum.prestemos.application.model.RefreshTokenPolicy;
 import com.wecaelum.prestemos.application.port.out.PasswordHasher;
+import com.wecaelum.prestemos.application.port.out.RefreshTokenGenerator;
+import com.wecaelum.prestemos.application.port.out.RefreshTokenGenerator.GeneratedToken;
+import com.wecaelum.prestemos.application.port.out.RefreshTokenRepository;
 import com.wecaelum.prestemos.application.port.out.TokenIssuer;
 import com.wecaelum.prestemos.application.port.out.UserRepository;
 import com.wecaelum.prestemos.domain.model.Email;
 import com.wecaelum.prestemos.domain.model.Role;
 import com.wecaelum.prestemos.domain.model.User;
 import com.wecaelum.prestemos.domain.model.UserId;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,8 +48,15 @@ class AuthServiceTest {
     @Mock
     TokenIssuer tokens;
 
+    @Mock
+    RefreshTokenRepository refreshTokens;
+
+    @Mock
+    RefreshTokenGenerator generator;
+
     private AuthService service() {
-        return new AuthService(repo, hasher, tokens);
+        return new AuthService(repo, hasher, tokens, refreshTokens, generator,
+                new RefreshTokenPolicy(Duration.ofDays(7), Duration.ofSeconds(10)), Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     private User user(boolean active) {
@@ -66,7 +80,7 @@ class AuthServiceTest {
         assertThat(wrong.getMessage()).isEqualTo(unknown.getMessage()).isEqualTo("Email o contraseña incorrectos.");
         assertThat(((InvalidCredentialsException) wrong).code()).isEqualTo("INVALID_CREDENTIALS");
         verify(hasher).matches("mala", AuthService.DUMMY_HASH);
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(tokens, refreshTokens, generator);
     }
 
     @Test
@@ -90,7 +104,7 @@ class AuthServiceTest {
                 .hasMessage("Tu cuenta está desactivada. Escribe al administrador.")
                 .extracting(e -> ((DisabledAccountException) e).code())
                 .isEqualTo("ACCOUNT_DISABLED");
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(tokens, refreshTokens, generator);
     }
 
     @Test
@@ -107,7 +121,8 @@ class AuthServiceTest {
         User user = user(true);
         when(repo.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(hasher.matches("123", "HASH")).thenReturn(true);
-        when(tokens.issue(user)).thenReturn(new IssuedToken("jwt", NOW.plusSeconds(3600)));
+        when(tokens.issue(user)).thenReturn(new IssuedToken("jwt", NOW.plusSeconds(900)));
+        when(generator.generate()).thenReturn(new GeneratedToken("raw", "hash"));
 
         AuthResult result = service().login("  Usuario@Test.com ", "123");
 
@@ -117,7 +132,8 @@ class AuthServiceTest {
     @Test
     void loginReturnsIssuedToken() {
         User user = user(true);
-        IssuedToken token = new IssuedToken("jwt", NOW.plusSeconds(3600));
+        IssuedToken token = new IssuedToken("jwt", NOW.plusSeconds(900));
+        when(generator.generate()).thenReturn(new GeneratedToken("raw", "hash"));
         when(repo.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(hasher.matches("123", "HASH")).thenReturn(true);
         when(tokens.issue(user)).thenReturn(token);

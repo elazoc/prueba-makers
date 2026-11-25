@@ -15,7 +15,10 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -28,7 +31,7 @@ import org.springframework.security.oauth2.jwt.JwtValidationException;
 
 class JwtTokenIssuerTest {
 
-    private final JwtProperties properties = new JwtProperties("prestemos", Duration.ofMinutes(60), null, null);
+    private final JwtProperties properties = new JwtProperties("prestemos", Duration.ofMinutes(15), null, null);
     private final JwtKeyConfig config = new JwtKeyConfig();
     private final JwtKeyConfig.RsaKeys keys = config.jwtKeys(properties);
     private final JwtEncoder encoder = config.jwtEncoder(keys);
@@ -50,8 +53,16 @@ class JwtTokenIssuerTest {
         assertThat(jwt.getClaimAsString("name")).isEqualTo("Ana Pérez");
         assertThat(jwt.getClaimAsStringList("roles")).containsExactly("USER");
         assertThat(jwt.getClaimAsString("iss")).isEqualTo("prestemos");
-        assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(Duration.ofSeconds(3600));
+        assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(Duration.ofSeconds(900));
         assertThat(token.expiresAt()).isEqualTo(jwt.getExpiresAt());
+    }
+
+    @Test
+    void accessTokensLast15MinutesByDefault() {
+        JwtProperties defaults = new Binder(new MapConfigurationPropertySource(Map.of("security.jwt.issuer", "prestemos")))
+                .bindOrCreate("security.jwt", JwtProperties.class);
+
+        assertThat(defaults.ttl()).isEqualTo(Duration.ofMinutes(15));
     }
 
     @Test

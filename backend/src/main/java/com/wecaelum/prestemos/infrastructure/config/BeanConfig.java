@@ -3,6 +3,8 @@ package com.wecaelum.prestemos.infrastructure.config;
 import com.wecaelum.prestemos.application.port.out.DomainEventPublisher;
 import com.wecaelum.prestemos.application.port.out.LoanRepository;
 import com.wecaelum.prestemos.application.port.out.PasswordHasher;
+import com.wecaelum.prestemos.application.port.out.RefreshTokenGenerator;
+import com.wecaelum.prestemos.application.port.out.RefreshTokenRepository;
 import com.wecaelum.prestemos.application.port.out.TokenIssuer;
 import com.wecaelum.prestemos.application.port.out.UserRepository;
 import com.wecaelum.prestemos.application.service.AuthService;
@@ -10,6 +12,7 @@ import com.wecaelum.prestemos.application.service.LoanCommandService;
 import com.wecaelum.prestemos.application.service.LoanQueryService;
 import com.wecaelum.prestemos.application.service.UserService;
 import com.wecaelum.prestemos.domain.policy.LoanPolicy;
+import com.wecaelum.prestemos.infrastructure.security.RefreshProperties;
 import java.time.Clock;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -46,7 +49,14 @@ public class BeanConfig {
     }
 
     @Bean
-    public AuthService authService(UserRepository users, PasswordHasher hasher, TokenIssuer tokens) {
-        return new AuthService(users, hasher, tokens);
+    public AuthService authService(
+            UserRepository users,
+            PasswordHasher hasher,
+            TokenIssuer tokens,
+            RefreshTokenRepository refreshTokens,
+            RefreshTokenGenerator generator,
+            RefreshProperties refresh,
+            Clock clock) {
+        return new AuthService(users, hasher, tokens, refreshTokens, generator, refresh.toPolicy(), clock);
     }
 }

@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.wecaelum.prestemos.application.exception.DisabledAccountException;
 import com.wecaelum.prestemos.application.exception.InvalidCredentialsException;
+import com.wecaelum.prestemos.application.exception.InvalidRefreshTokenException;
 import com.wecaelum.prestemos.domain.exception.CannotDeactivateSelfException;
 import com.wecaelum.prestemos.domain.exception.CannotDemoteSelfException;
 import com.wecaelum.prestemos.domain.exception.DomainException;
@@ -86,6 +87,7 @@ class GlobalExceptionHandlerTest {
                 case "demote-self" -> throw new CannotDemoteSelfException();
                 case "credentials" -> throw new InvalidCredentialsException();
                 case "disabled" -> throw new DisabledAccountException();
+                case "refresh" -> throw new InvalidRefreshTokenException();
                 case "optimistic" -> throw new ObjectOptimisticLockingFailureException("Loan", "x");
                 case "illegal-argument" -> throw new IllegalArgumentException("El monto debe ser positivo.");
                 case "unmapped" -> throw new UnmappedDomainException();
@@ -147,6 +149,7 @@ class GlobalExceptionHandlerTest {
                 Arguments.of("policy", 422, "LOAN_POLICY_VIOLATION"),
                 Arguments.of("credentials", 401, "INVALID_CREDENTIALS"),
                 Arguments.of("disabled", 401, "ACCOUNT_DISABLED"),
+                Arguments.of("refresh", 401, "REFRESH_TOKEN_INVALID"),
                 Arguments.of("optimistic", 409, "CONCURRENT_MODIFICATION"),
                 Arguments.of("illegal-argument", 400, "VALIDATION_ERROR"));
     }

@@ -2,6 +2,7 @@ package com.wecaelum.prestemos.infrastructure.adapter.in.web.error;
 
 import com.wecaelum.prestemos.application.exception.DisabledAccountException;
 import com.wecaelum.prestemos.application.exception.InvalidCredentialsException;
+import com.wecaelum.prestemos.application.exception.InvalidRefreshTokenException;
 import com.wecaelum.prestemos.domain.exception.DomainException;
 import com.wecaelum.prestemos.domain.exception.EmailAlreadyRegisteredException;
 import com.wecaelum.prestemos.domain.exception.CannotDeactivateSelfException;
@@ -56,17 +57,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({
         DomainException.class,
         InvalidCredentialsException.class,
-        DisabledAccountException.class
+        DisabledAccountException.class,
+        InvalidRefreshTokenException.class
     })
     ResponseEntity<ProblemDetail> handleBusiness(RuntimeException ex) {
         HttpStatus status = statusOf(ex);
         if (status == null) {
             return handleUnexpected(ex);
         }
-        String code = ex instanceof DomainException domain
-                ? domain.code()
-                : ex instanceof InvalidCredentialsException invalid ? invalid.code() : ((DisabledAccountException) ex).code();
-        return respond(problems.create(status, code, ex.getMessage()));
+        return respond(problems.create(status, codeOf(ex), ex.getMessage()));
+    }
+
+    private static String codeOf(RuntimeException ex) {
+        return switch (ex) {
+            case DomainException e -> e.code();
+            case InvalidCredentialsException e -> e.code();
+            case DisabledAccountException e -> e.code();
+            case InvalidRefreshTokenException e -> e.code();
+            default -> throw new IllegalStateException("No error code for " + ex.getClass().getName());
+        };
     }
 
     private static HttpStatus statusOf(RuntimeException ex) {
@@ -80,6 +89,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case LoanPolicyViolationException e -> HttpStatus.UNPROCESSABLE_CONTENT;
             case InvalidCredentialsException e -> HttpStatus.UNAUTHORIZED;
             case DisabledAccountException e -> HttpStatus.UNAUTHORIZED;
+            case InvalidRefreshTokenException e -> HttpStatus.UNAUTHORIZED;
             default -> null;
         };
     }

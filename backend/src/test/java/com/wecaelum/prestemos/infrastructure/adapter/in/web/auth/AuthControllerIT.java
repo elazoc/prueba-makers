@@ -37,7 +37,7 @@ class AuthControllerIT {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.accessToken").value(not(emptyOrNullString())))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.expiresIn").value(3600))
+                .andExpect(jsonPath("$.expiresIn").value(900))
                 .andExpect(jsonPath("$.user.id").value("00000000-0000-0000-0000-000000000001"))
                 .andExpect(jsonPath("$.user.email").value("usuario@test.com"))
                 .andExpect(jsonPath("$.user.fullName").value("Usuario Demo"))

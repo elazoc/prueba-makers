@@ -12,7 +12,7 @@ import org.springframework.core.io.Resource;
 @ConfigurationProperties("security.jwt")
 public record JwtProperties(
         @DefaultValue("prestemos") String issuer,
-        @DefaultValue("60m") Duration ttl,
+        @DefaultValue("15m") Duration ttl,
         Resource publicKey,
         Resource privateKey) {
 

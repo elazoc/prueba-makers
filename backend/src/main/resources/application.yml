@@ -22,10 +22,17 @@ spring:
 security:
   jwt:
     issuer: prestemos
-    ttl: 60m
+    # Short-lived: the front renews it with the refresh token.
+    ttl: 15m
     # PEM keys for production (both or neither); without them a key pair is generated at startup.
     # public-key: file:/run/secrets/jwt-public.pem
     # private-key: file:/run/secrets/jwt-private.pem
+  refresh:
+    # Absolute life of a session from login; rotations do not extend it.
+    ttl: 7d
+    # A token rotated less than this ago is rejected without revoking its family (two tabs racing).
+    reuse-grace: 10s
+    cookie-name: prestemos_refresh
 
 app:
   cors:
