@@ -18,6 +18,11 @@ spring:
   h2:
     console:
       enabled: true
+  mvc:
+    async:
+      # The live events stream is an async request: it closes after this and the front reconnects with its
+      # current token. Keep it below the proxy's SSE timeout (35 min in nginx).
+      request-timeout: 30m
 
 security:
   jwt:
@@ -37,6 +42,9 @@ security:
 app:
   cors:
     allowed-origins: http://localhost:4200
+  sse:
+    # SSE comment that keeps an idle live events stream open through proxies.
+    heartbeat: 15s
 
 loans:
   policy:

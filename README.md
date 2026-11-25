@@ -50,6 +50,7 @@ curl -s localhost:8080/api/v1/me/loans -H "Authorization: Bearer $TOKEN"
 | `PUT /loans/{id}` · `DELETE /loans/{id}` | dueño | Edita o cancela mientras está pendiente |
 | `GET /loans` | admin | Todos los préstamos con el email del solicitante |
 | `POST /loans/{id}/approve` · `POST /loans/{id}/reject` | admin | Decide (el rechazo exige motivo) |
+| `GET /loans/events` | autenticado | Avisos en vivo (SSE): el admin recibe todos; el usuario, las decisiones sobre sus préstamos |
 | `GET /users/me` | autenticado | Mi perfil |
 | `GET/POST /users` · `GET/PUT/DELETE /users/{id}` | admin | Administración de usuarios (DELETE desactiva) |
 
@@ -85,8 +86,14 @@ mapean a mano. Concesión pragmática: `@Transactional` en los servicios de apli
 mezclarlo con WebFlux bloquearía el event loop o obligaría a envolver todo en `boundedElastic`,
 que es volver a un hilo por petición con más complejidad. Con Java 21 y
 `spring.threads.virtual.enabled=true`, MVC atiende miles de peticiones concurrentes con código
-simple. El lugar donde WebFlux sí aporta son los avisos en vivo (SSE con `Flux` desde MVC): quedó
-diseñado y es el siguiente paso.
+simple.
+
+**Avisos en vivo con SSE.** Es el único punto reactivo: un `Flux` de Reactor servido desde MVC en
+`GET /loans/events`. Los eventos salen solo después del commit (una transacción revertida no
+avisa nada), con un heartbeat cada 15 s para que los proxies no corten la conexión, y el servidor
+la cierra a los 30 minutos para que el front se reconecte con su token vigente. Se eligió SSE y no
+WebSockets porque los avisos van en una sola dirección y viajan por HTTP normal, con el mismo JWT
+en la cabecera y las mismas reglas de seguridad que el resto de la API.
 
 **Transacción y concurrencia en la aprobación.** Aprobar o rechazar ocurre en una transacción
 que lee el préstamo sin caché, aplica la transición en el dominio y guarda. El bloqueo optimista
@@ -137,9 +144,8 @@ para no revelar que existe.
 
 ## Límites conocidos y trabajo futuro
 
-- Avisos en vivo con SSE (diseñados, pendientes).
 - La regla de "máximo 3 pendientes" puede admitir un cuarto si el mismo usuario envía dos
   solicitudes exactamente a la vez.
-- El bus de eventos y la caché viven en memoria: con varias instancias harían falta Redis o un
-  broker.
+- El bus de los avisos en vivo y la caché viven en memoria y sirven a una sola instancia: con
+  varias harían falta Redis pub/sub o un broker.
 - Sin cálculo de intereses ni cuotas, sin recuperación de contraseña y sin rate limiting en el login.
