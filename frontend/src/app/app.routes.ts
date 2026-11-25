@@ -35,13 +35,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/admin-loans/routes').then((m) => m.ADMIN_LOANS_ROUTES),
       },
-      {
-        path: 'admin/usuarios',
-        title: 'Usuarios · Prestemos',
-        data: { title: 'Usuarios' },
-        canMatch: [authGuard, roleGuard('ADMIN')],
-        loadChildren: () => import('./features/users/routes').then((m) => m.USERS_ROUTES),
-      },
     ],
   },
   {
